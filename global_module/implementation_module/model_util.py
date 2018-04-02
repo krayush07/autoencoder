@@ -16,7 +16,7 @@ class Utils:
             layer4_op = self.dense_layer(layer3_op, 128, 'layer4', tf.nn.tanh)
             layer5_op = self.dense_layer(layer4_op, 256, 'layer5', tf.nn.tanh)
         with tf.variable_scope('ffn_ae_op'):
-            layer6_op = self.dense_layer(layer5_op, output_shape, 'layer6')
+            layer6_op = self.dense_layer(layer5_op, output_shape, 'layer6', tf.nn.relu)
         return layer6_op
 
     def ffn_encoder(self, input):

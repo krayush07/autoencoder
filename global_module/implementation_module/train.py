@@ -1,12 +1,134 @@
 import numpy as np
-from global_module.implementation_module import autoencoder
-from global_module.implementation_module import reader
+from global_module.implementation_module import Autoencoder
+from global_module.implementation_module import Reader
+import tensorflow as tf
+from global_module.settings_module import ParamsClass, Directory, Dictionary
+import random
+import sys
+import time
+
 
 class Train:
+    def run_epoch(self, session, min_loss, model_obj, reader, input):
 
-    def run_epoch(self, session, model_obj, params, input):
+        global epoch_combined_loss, step
+        epoch_combined_loss = 0.0
+        params = model_obj.params
+        dir_obj = model_obj.dir_obj
+        for step, curr_input in enumerate(reader.data_iterator(input)):
+            feed_dict = {model_obj.input: curr_input}
+            if params.mode == 'TR':
+                total_loss, _ = session.run([model_obj.loss, model_obj.train_op],
+                                             feed_dict=feed_dict)
+            else:
+                total_loss = session.run(model_obj.loss, feed_dict=feed_dict)
 
-        for step, curr_input in enumerate(reader(params).data_iterator(input)):
-            feed_dict = {model_obj.input:curr_input}
-            loss = session.run([model_obj.loss],
-                               feed_dict=feed_dict)
+            epoch_combined_loss += total_loss
+
+        epoch_combined_loss /= step
+        if params.mode == 'VA':
+            model_saver = tf.train.Saver()
+            print('**** Current minimum on valid set: %.4f ****' % min_loss)
+
+            if epoch_combined_loss < min_loss:
+                min_loss = epoch_combined_loss
+                model_saver.save(session,
+                                 save_path=dir_obj.model_path + dir_obj.model_name,
+                                 latest_filename=dir_obj.latest_checkpoint)
+                print('==== Model saved! ====')
+
+        return epoch_combined_loss, min_loss
+
+    def run_train(self):
+        mode_train, mode_valid, mode_test = 'TR', 'VA', 'TE'
+
+        # train object
+        params_train = ParamsClass(mode=mode_train)
+        dir_train = Directory(mode_train)
+        train_reader = Reader(params_train)
+        train_instances = train_reader.read_image_data(dir_train.data_filename)
+
+        # valid object
+        params_valid = ParamsClass(mode=mode_valid)
+        dir_valid = Directory(mode_valid)
+        valid_reader = Reader(params_valid)
+        if dir_valid.data_filename is None:
+            train_instances = train_instances[: int(0.8 * len(train_instances))]
+            valid_instances = train_instances[int(0.8) * len(train_instances):]
+        else:
+            valid_instances = valid_reader.read_image_data(dir_valid.data_filename)
+
+        # test object
+        params_test = ParamsClass(mode=mode_test)
+        dir_test = Directory(mode_test)
+        test_reader = Reader(params_test)
+        test_instances = test_reader.read_image_data(dir_test.data_filename)
+
+        random.seed(4321)
+        if (params_train.enable_shuffle):
+            random.shuffle(train_instances)
+            random.shuffle(valid_instances)
+
+        global_min_loss = sys.float_info.max
+
+        print('***** INITIALIZING TF GRAPH *****')
+
+        with tf.Graph().as_default(), tf.Session() as session:
+            # train_writer = tf.summary.FileWriter(dir_train.log_path + '/train', session.graph)
+            # test_writer = tf.summary.FileWriter(dir_train.log_path + '/test')
+
+            # random_normal_initializer = tf.random_normal_initializer()
+            # random_uniform_initializer = tf.random_uniform_initializer(-params_train.init_scale, params_train.init_scale)
+            xavier_initializer = tf.contrib.layers.xavier_initializer(uniform=True, seed=None, dtype=tf.float32)
+
+            # with tf.name_scope('train'):
+            with tf.variable_scope("model", reuse=None, initializer=xavier_initializer):
+                train_obj = Autoencoder(params_train, dir_train)
+
+            # with tf.name_scope('valid'):
+            with tf.variable_scope("model", reuse=True, initializer=xavier_initializer):
+                valid_obj = Autoencoder(params_valid, dir_valid)
+
+            with tf.variable_scope("model", reuse=True, initializer=xavier_initializer):
+                test_obj = Autoencoder(params_test, dir_test)
+
+            if not params_train.enable_checkpoint:
+                session.run(tf.global_variables_initializer())
+
+            if params_train.enable_checkpoint:
+                ckpt = tf.train.get_checkpoint_state(dir_train.model_path)
+                if ckpt and ckpt.model_checkpoint_path:
+                    print("Loading model from: %s" % ckpt.model_checkpoint_path)
+                    tf.train.Saver().restore(session, ckpt.model_checkpoint_path)
+
+            print('**** TF GRAPH INITIALIZED ****')
+
+            # train_writer.add_graph(tf.get_default_graph())
+
+            start_time = time.time()
+            for i in range(params_train.max_max_epoch):
+                lr_decay = params_train.lr_decay ** max(i - params_train.max_epoch, 0.0)
+                # train_obj.assign_lr(session, params_train.learning_rate * lr_decay)
+
+                # print(params_train.learning_rate * lr_decay)
+
+                print('\n++++++++=========+++++++\n')
+                lr = params_train.learning_rate * lr_decay
+                print("Epoch: %d Learning rate: %.5f" % (i + 1, lr))
+                train_loss, _, = self.run_epoch(session, global_min_loss, train_obj, train_reader, train_instances)
+                print("Epoch: %d Train loss: %.4f" % (i + 1, train_loss))
+
+                valid_loss, curr_min_loss = self.run_epoch(session, global_min_loss, valid_obj, valid_reader, valid_instances)
+                if (curr_min_loss < global_min_loss):
+                    global_min_loss = curr_min_loss
+
+                print("Epoch: %d Valid loss: %.4f" % (i + 1, valid_loss))
+
+                test_loss, _, = self.run_epoch(session, global_min_loss, test_obj, test_reader, test_instances)
+                print("Epoch: %d Test loss: %.4f" % (i + 1, test_loss))
+
+                curr_time = time.time()
+                print('1 epoch run takes ' + str(((curr_time - start_time) / (i + 1)) / 60) + ' minutes.')
+
+                # train_writer.close()
+                # test_writer.close()

@@ -3,27 +3,31 @@ from global_module.implementation_module import utils
 
 
 class Autoencoder:
-    def __init__(self, params):
+    def __init__(self, params, dir_obj):
         self.params = params
+        self.model_utils = utils()
+        self.dir_obj = dir_obj
         self.create_placeholder()
+        self.autoencode()
+        self.train_op = self.train()
 
     def create_placeholder(self):
-        self.input = tf.placeholder(dtype=tf.float32, shape=[None, None], name='input_placeholder')
+        self.input = tf.placeholder(dtype=tf.float32, shape=[None, self.params.output_shape], name='input_placeholder')
 
     def autoencode(self):
-        self.decoded_op, self.rep = utils.ffn_autoencoder(input, self.params.output_shape)
+        self.decoded_op, self.rep = self.model_utils.ffn_autoencoder(self.input, self.params.output_shape)
 
     def encode(self):
-        self.rep = utils.ffn_encoder(self.input)
+        self.rep = self.model_utils.ffn_encoder(self.input)
 
     def compute_loss(self):
-        self.loss = tf.squared_difference(self.decoded_op, self.input)
+        self.loss = tf.reduce_mean(tf.squared_difference(self.decoded_op, self.input))
 
     def train(self):
         global optimizer
         with tf.variable_scope('optimize_tar_net'):
-            learning_rate = self.params.lr
-
+            learning_rate = self.params.learning_rate
+            self.compute_loss()
             trainable_tvars = tf.trainable_variables()
             grads = tf.gradients(self.loss, trainable_tvars)
             grads, _ = tf.clip_by_global_norm(grads, clip_norm=self.params.max_grad_norm)

@@ -2,7 +2,8 @@ import gzip
 
 import numpy as np
 import tensorflow as tf
-
+import random
+from global_module.settings_module import ParamsClass
 
 class DataReader:
     def __init__(self, params):
@@ -32,8 +33,14 @@ class DataReader:
             return data
 
     def data_iterator(self, input):
-        pass
+        num_batches = len(input) // self.params.batch_size
+
+        input = input.reshape(len(input), -1)
+        for i in range(num_batches):
+            yield input[i * self.params.batch_size : (i+1) * self.params.batch_size]
 
 
-# dr = DataReader('TR').read_image_data('/home/aykumar/aykumar_home/aykumar_dir/autoencoder/global_module/utility_dir/data/t10k-images-idx3-ubyte.gz')
-dr = DataReader('TR').read_image_label('/home/aykumar/aykumar_home/aykumar_dir/autoencoder/global_module/utility_dir/data/t10k-labels-idx1-ubyte.gz')
+# data_reader = DataReader(ParamsClass())
+# dr = data_reader.read_image_data('/home/aykumar/aykumar_home/aykumar_dir/autoencoder/global_module/utility_dir/data/t10k-images-idx3-ubyte.gz')
+# data_reader.data_iterator(dr)
+# # dr = DataReader('TR').read_image_label('/home/aykumar/aykumar_home/aykumar_dir/autoencoder/global_module/utility_dir/data/t10k-labels-idx1-ubyte.gz')
