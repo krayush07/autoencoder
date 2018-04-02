@@ -7,8 +7,8 @@ class ParamsClass():
         self.init_scale = 0.1
         self.learning_rate = 0.001
         self.max_grad_norm = 5
-        self.max_epoch = 300
-        self.max_max_epoch = 300
+        self.max_epoch = 3
+        self.max_max_epoch = 3
 
         if (mode == 'TR'):
             self.keep_prob = 1.0
@@ -55,3 +55,5 @@ class ParamsClass():
         self.optimizer = 'adam'
 
         self.output_shape = 784
+        self.log = True
+        self.log_step = 100

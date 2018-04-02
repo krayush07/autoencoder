@@ -9,17 +9,35 @@ import time
 
 
 class Train:
-    def run_epoch(self, session, min_loss, model_obj, reader, input):
+    def __init__(self):
+        self.iter_train = 0
+        self.iter_valid = 0
 
+    def run_epoch(self, session, min_loss, model_obj, reader, input, writer):
         global epoch_combined_loss, step
         epoch_combined_loss = 0.0
+
         params = model_obj.params
         dir_obj = model_obj.dir_obj
         for step, curr_input in enumerate(reader.data_iterator(input)):
             feed_dict = {model_obj.input: curr_input}
             if params.mode == 'TR':
-                total_loss, _ = session.run([model_obj.loss, model_obj.train_op],
-                                             feed_dict=feed_dict)
+                run_metadata = tf.RunMetadata()
+                total_loss, summary_train, _ = session.run([model_obj.loss, model_obj.merged_summary_train, model_obj.train_op],
+                                                           run_metadata=run_metadata,
+                                                           feed_dict=feed_dict)
+                self.iter_train += 1
+                if self.iter_train % params.log_step == 0 and params.log:
+                    writer.add_run_metadata(run_metadata, 'step%d' % self.iter_train)
+                    writer.add_summary(summary_train, self.iter_train)
+
+            elif params.mode == 'VA':
+                total_loss, summary_valid = session.run([model_obj.loss, model_obj.merged_summary_valid],
+                                                        feed_dict=feed_dict)
+                self.iter_valid += 1
+                if self.iter_valid % params.log_step == 0 and params.log:
+                    writer.add_summary(summary_valid, self.iter_valid)
+
             else:
                 total_loss = session.run(model_obj.loss, feed_dict=feed_dict)
 
@@ -40,6 +58,7 @@ class Train:
         return epoch_combined_loss, min_loss
 
     def run_train(self):
+        global train_writer, valid_writer, test_writer
         mode_train, mode_valid, mode_test = 'TR', 'VA', 'TE'
 
         # train object
@@ -74,8 +93,10 @@ class Train:
         print('***** INITIALIZING TF GRAPH *****')
 
         with tf.Graph().as_default(), tf.Session() as session:
-            # train_writer = tf.summary.FileWriter(dir_train.log_path + '/train', session.graph)
-            # test_writer = tf.summary.FileWriter(dir_train.log_path + '/test')
+            if params_train.log:
+                train_writer = tf.summary.FileWriter(dir_train.log_path + '/train', session.graph)
+                valid_writer = tf.summary.FileWriter(dir_train.log_path + '/valid')
+                test_writer = tf.summary.FileWriter(dir_train.log_path + '/test')
 
             # random_normal_initializer = tf.random_normal_initializer()
             # random_uniform_initializer = tf.random_uniform_initializer(-params_train.init_scale, params_train.init_scale)
@@ -115,20 +136,22 @@ class Train:
                 print('\n++++++++=========+++++++\n')
                 lr = params_train.learning_rate * lr_decay
                 print("Epoch: %d Learning rate: %.5f" % (i + 1, lr))
-                train_loss, _, = self.run_epoch(session, global_min_loss, train_obj, train_reader, train_instances)
+                train_loss, _, = self.run_epoch(session, global_min_loss, train_obj, train_reader, train_instances, train_writer)
                 print("Epoch: %d Train loss: %.4f" % (i + 1, train_loss))
 
-                valid_loss, curr_min_loss = self.run_epoch(session, global_min_loss, valid_obj, valid_reader, valid_instances)
+                valid_loss, curr_min_loss = self.run_epoch(session, global_min_loss, valid_obj, valid_reader, valid_instances, valid_writer)
                 if (curr_min_loss < global_min_loss):
                     global_min_loss = curr_min_loss
 
                 print("Epoch: %d Valid loss: %.4f" % (i + 1, valid_loss))
 
-                test_loss, _, = self.run_epoch(session, global_min_loss, test_obj, test_reader, test_instances)
+                test_loss, _, = self.run_epoch(session, global_min_loss, test_obj, test_reader, test_instances, test_writer)
                 print("Epoch: %d Test loss: %.4f" % (i + 1, test_loss))
 
                 curr_time = time.time()
                 print('1 epoch run takes ' + str(((curr_time - start_time) / (i + 1)) / 60) + ' minutes.')
 
-                # train_writer.close()
-                # test_writer.close()
+            if params_train.log:
+                train_writer.close()
+                valid_writer.close()
+                test_writer.close()

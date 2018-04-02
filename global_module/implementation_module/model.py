@@ -10,6 +10,7 @@ class Autoencoder:
         self.create_placeholder()
         self.autoencode()
         self.train_op = self.train()
+        self.generate_summary()
 
     def create_placeholder(self):
         self.input = tf.placeholder(dtype=tf.float32, shape=[None, self.params.output_shape], name='input_placeholder')
@@ -22,6 +23,20 @@ class Autoencoder:
 
     def compute_loss(self):
         self.loss = tf.reduce_mean(tf.squared_difference(self.decoded_op, self.input))
+
+    def generate_summary(self):
+        if self.params.mode == 'TR':
+            train_loss = tf.summary.scalar('train_loss', self.loss)
+            train_image = tf.summary.image(name='train_input', tensor= tf.reshape(self.input, shape=(-1, 28, 28, 1)), max_outputs=5)
+            # tf.summary.image(name='train_encoded', tensor= tf.reshape(self.rep, shape=(-1, 28, 28, 1)), max_outputs=5)
+            train_decode = tf.summary.image(name='train_decoded', tensor= tf.reshape(self.decoded_op, shape=(-1, 28, 28, 1)), max_outputs=5)
+            self.merged_summary_train = tf.summary.merge([train_loss, train_image, train_decode])
+        elif self.params.mode == 'VA':
+            valid_loss = tf.summary.scalar('valid_loss', self.loss)
+            valid_image = tf.summary.image(name='valid_input', tensor=tf.reshape(self.input, shape=(-1, 28, 28, 1)), max_outputs=5)
+            # tf.summary.image(name='valid_encoded', tensor=tf.reshape(self.rep, shape=(-1, 28, 28, 1)), max_outputs=5)
+            valid_decode = tf.summary.image(name='valid_decoded', tensor=tf.reshape(self.decoded_op, shape=(-1, 28, 28, 1)), max_outputs=5)
+            self.merged_summary_valid = tf.summary.merge([valid_loss, valid_image, valid_decode])
 
     def train(self):
         global optimizer
