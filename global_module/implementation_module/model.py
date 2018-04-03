@@ -27,15 +27,23 @@ class Autoencoder:
     def generate_summary(self):
         if self.params.mode == 'TR':
             train_loss = tf.summary.scalar('train_loss', self.loss)
-            train_image = tf.summary.image(name='train_input', tensor= tf.reshape(self.input, shape=(-1, 28, 28, 1)), max_outputs=5)
+            train_image = tf.summary.image(name='train_input',
+                                           tensor= tf.reshape(self.input, shape=(-1, 28, 28, 1)),
+                                           max_outputs=self.params.max_output)
             # tf.summary.image(name='train_encoded', tensor= tf.reshape(self.rep, shape=(-1, 28, 28, 1)), max_outputs=5)
-            train_decode = tf.summary.image(name='train_decoded', tensor= tf.reshape(self.decoded_op, shape=(-1, 28, 28, 1)), max_outputs=5)
+            train_decode = tf.summary.image(name='train_decoded',
+                                            tensor= tf.reshape(self.decoded_op, shape=(-1, 28, 28, 1)),
+                                            max_outputs=self.params.max_output)
             self.merged_summary_train = tf.summary.merge([train_loss, train_image, train_decode])
         elif self.params.mode == 'VA':
             valid_loss = tf.summary.scalar('valid_loss', self.loss)
-            valid_image = tf.summary.image(name='valid_input', tensor=tf.reshape(self.input, shape=(-1, 28, 28, 1)), max_outputs=5)
+            valid_image = tf.summary.image(name='valid_input',
+                                           tensor=tf.reshape(self.input, shape=(-1, 28, 28, 1)),
+                                           max_outputs=self.params.max_output)
             # tf.summary.image(name='valid_encoded', tensor=tf.reshape(self.rep, shape=(-1, 28, 28, 1)), max_outputs=5)
-            valid_decode = tf.summary.image(name='valid_decoded', tensor=tf.reshape(self.decoded_op, shape=(-1, 28, 28, 1)), max_outputs=5)
+            valid_decode = tf.summary.image(name='valid_decoded',
+                                            tensor=tf.reshape(self.decoded_op, shape=(-1, 28, 28, 1)),
+                                            max_outputs=self.params.max_output)
             self.merged_summary_valid = tf.summary.merge([valid_loss, valid_image, valid_decode])
 
     def train(self):

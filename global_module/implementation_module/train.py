@@ -72,8 +72,9 @@ class Train:
         dir_valid = Directory(mode_valid)
         valid_reader = Reader(params_valid)
         if dir_valid.data_filename is None:
-            train_instances = train_instances[: int(0.8 * len(train_instances))]
-            valid_instances = train_instances[int(0.8) * len(train_instances):]
+            all_instances = train_instances
+            train_instances = all_instances[: int(0.8 * len(all_instances))]
+            valid_instances = all_instances[int(0.8 * len(all_instances)):]
         else:
             valid_instances = valid_reader.read_image_data(dir_valid.data_filename)
 
