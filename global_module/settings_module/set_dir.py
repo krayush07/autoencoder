@@ -20,6 +20,7 @@ class Directory():
         self.model_path = self.curr_utility_dir + '/models'
         self.output_path = self.curr_utility_dir + '/output'
         self.log_path = self.curr_utility_dir + '/log_dir'
+        self.log_emb_path = self.log_path + '/emb_viz'
 
         self.makedir(self.vocab_path)
         self.makedir(self.model_path)
@@ -38,19 +39,16 @@ class Directory():
         if (mode == 'VA'):
             # self.data_filename = self.data_path + '/tokenized_valid.txt'
             # self.label_filename = self.data_path + '/label_valid.txt'
-            self.data_filename = None
-            self.label_filename = None
+            self.data_filename = None   # for MNIST, sampling is done from train set itself
+            self.label_filename = None  # for MNIST, sampling is done from train set itself
         elif (mode == 'TE'):
             self.data_filename = self.data_path + '/t10k-images-idx3-ubyte.gz'
             self.label_filename = self.data_path + '/t10k-labels-idx3-ubyte.gz'
 
         ''' ****************** Directory to saving or loading a model ********************** '''''
         self.latest_checkpoint = 'checkpoint'
-        self.model_name = '/cnn_autoencoder.ckpt'  # model name .ckpt is the model extension
+        self.model_name = '/cnn_autoencoder_d50.ckpt'  # model name .ckpt is the model extension
         ''' ********** ********* ******** ********* ********* ********* ******** ************* '''''
-
-        self.test_cost_path = self.output_path + '/test_op.txt'  # test cost output
-        self.valid_cost_path = self.output_path + '/valid_op.txt'  # test vector output
 
         '''Directory to csv and pkl files'''
         self.vocab_size_file = self.vocab_path + '/vocab_size.txt'
@@ -60,7 +58,7 @@ class Directory():
         self.label_map_dict = self.vocab_path + '/label_map.pkl'
 
         ''' ****************** Directory for test model ********************** '''''
-        self.test_model_name = '/cnn_autoencoder.ckpt'
+        self.test_model_name = '/cnn_autoencoder_d50.ckpt'
         self.test_model = self.model_path + self.test_model_name
 
     def makedir(self, dirname):

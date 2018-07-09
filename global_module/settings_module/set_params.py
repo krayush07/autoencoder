@@ -7,15 +7,15 @@ class ParamsClass():
         self.init_scale = 0.1
         self.learning_rate = 0.001
         self.max_grad_norm = 10
-        self.max_epoch = 300
-        self.max_max_epoch = 300
+        self.max_epoch = 70
+        self.max_max_epoch = 100
 
         if (mode == 'TR'):
             self.keep_prob = 1.0
         else:
             self.keep_prob = 1.0
 
-        self.lr_decay = 0.99
+        self.lr_decay = 0.999
 
         self.enable_shuffle = True
         self.enable_checkpoint = False
@@ -56,5 +56,5 @@ class ParamsClass():
 
         self.output_shape = 784
         self.log = True
-        self.log_step = 100
-        self.max_output = 9
+        self.log_step = 5
+        self.max_output = 6
