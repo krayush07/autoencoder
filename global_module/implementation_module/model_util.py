@@ -13,16 +13,16 @@ class Utils:
 
     def ffn_decoder(self, layer3_op, output_shape):
         with tf.variable_scope('ffn_ae_dec'):
-            layer4_op = self.dense_layer(layer3_op, 128, 'layer4', tf.nn.tanh)
-            layer5_op = self.dense_layer(layer4_op, 256, 'layer5', tf.nn.tanh)
+            layer4_op = self.dense_layer(layer3_op, 128, 'layer4', tf.nn.sigmoid)
+            layer5_op = self.dense_layer(layer4_op, 256, 'layer5', tf.nn.sigmoid)
         with tf.variable_scope('ffn_ae_op'):
-            layer6_op = self.dense_layer(layer5_op, output_shape, 'layer6', tf.nn.relu)
+            layer6_op = self.dense_layer(layer5_op, output_shape, 'layer6', tf.nn.sigmoid)
         return layer6_op
 
     def ffn_encoder(self, input):
         with tf.variable_scope('ffn_ae_enc'):
-            layer1_op = self.dense_layer(input, 256, 'layer1', tf.nn.tanh)
-            layer2_op = self.dense_layer(layer1_op, 128, 'layer2', tf.nn.tanh)
+            layer1_op = self.dense_layer(input, 256, 'layer1', tf.nn.sigmoid)
+            layer2_op = self.dense_layer(layer1_op, 128, 'layer2', tf.nn.sigmoid)
         with tf.variable_scope('ffn_ae_rep'):
-            layer3_op = self.dense_layer(layer2_op, 2, 'layer3')
+            layer3_op = self.dense_layer(layer2_op, 50, 'layer3', tf.nn.sigmoid)
         return layer3_op

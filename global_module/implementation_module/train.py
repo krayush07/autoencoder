@@ -23,9 +23,9 @@ class Train:
             feed_dict = {model_obj.input: curr_input}
             if params.mode == 'TR':
                 run_metadata = tf.RunMetadata()
-                total_loss, summary_train, _ = session.run([model_obj.loss, model_obj.merged_summary_train, model_obj.train_op],
-                                                           run_metadata=run_metadata,
-                                                           feed_dict=feed_dict)
+                inp, op, total_loss, summary_train, _ = session.run([model_obj.input, model_obj.decoded_op, model_obj.loss, model_obj.merged_summary_train, model_obj.train_op],
+                                                                    run_metadata=run_metadata,
+                                                                    feed_dict=feed_dict)
                 self.iter_train += 1
                 if self.iter_train % params.log_step == 0 and params.log:
                     writer.add_run_metadata(run_metadata, 'step%d' % self.iter_train)
@@ -58,8 +58,8 @@ class Train:
         return epoch_combined_loss, min_loss
 
     def run_train(self):
-        global train_writer, valid_writer, test_writer
-        mode_train, mode_valid, mode_test = 'TR', 'VA', 'TE'
+        global train_writer, valid_writer
+        mode_train, mode_valid = 'TR', 'VA'
 
         # train object
         params_train = ParamsClass(mode=mode_train)
@@ -78,12 +78,6 @@ class Train:
         else:
             valid_instances = valid_reader.read_image_data(dir_valid.data_filename)
 
-        # test object
-        params_test = ParamsClass(mode=mode_test)
-        dir_test = Directory(mode_test)
-        test_reader = Reader(params_test)
-        test_instances = test_reader.read_image_data(dir_test.data_filename)
-
         random.seed(4321)
         if (params_train.enable_shuffle):
             random.shuffle(train_instances)
@@ -94,11 +88,6 @@ class Train:
         print('***** INITIALIZING TF GRAPH *****')
 
         with tf.Graph().as_default(), tf.Session() as session:
-            if params_train.log:
-                train_writer = tf.summary.FileWriter(dir_train.log_path + '/train', session.graph)
-                valid_writer = tf.summary.FileWriter(dir_train.log_path + '/valid')
-                test_writer = tf.summary.FileWriter(dir_train.log_path + '/test')
-
             # random_normal_initializer = tf.random_normal_initializer()
             # random_uniform_initializer = tf.random_uniform_initializer(-params_train.init_scale, params_train.init_scale)
             xavier_initializer = tf.contrib.layers.xavier_initializer(uniform=True, seed=None, dtype=tf.float32)
@@ -111,9 +100,6 @@ class Train:
             with tf.variable_scope("model", reuse=True, initializer=xavier_initializer):
                 valid_obj = Autoencoder(params_valid, dir_valid)
 
-            with tf.variable_scope("model", reuse=True, initializer=xavier_initializer):
-                test_obj = Autoencoder(params_test, dir_test)
-
             if not params_train.enable_checkpoint:
                 session.run(tf.global_variables_initializer())
 
@@ -124,6 +110,10 @@ class Train:
                     tf.train.Saver().restore(session, ckpt.model_checkpoint_path)
 
             print('**** TF GRAPH INITIALIZED ****')
+
+            if params_train.log:
+                train_writer = tf.summary.FileWriter(dir_train.log_path + '/train', session.graph)
+                valid_writer = tf.summary.FileWriter(dir_train.log_path + '/valid')
 
             # train_writer.add_graph(tf.get_default_graph())
 
@@ -146,13 +136,9 @@ class Train:
 
                 print("Epoch: %d Valid loss: %.4f" % (i + 1, valid_loss))
 
-                test_loss, _, = self.run_epoch(session, global_min_loss, test_obj, test_reader, test_instances, test_writer)
-                print("Epoch: %d Test loss: %.4f" % (i + 1, test_loss))
-
                 curr_time = time.time()
                 print('1 epoch run takes ' + str(((curr_time - start_time) / (i + 1)) / 60) + ' minutes.')
 
             if params_train.log:
                 train_writer.close()
                 valid_writer.close()
-                test_writer.close()

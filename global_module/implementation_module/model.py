@@ -14,41 +14,52 @@ class Autoencoder:
 
     def create_placeholder(self):
         self.input = tf.placeholder(dtype=tf.float32, shape=[None, self.params.output_shape], name='input_placeholder')
+        self.normalized_input = tf.multiply(tf.constant(1.0/255.0), self.input)
 
     def autoencode(self):
-        self.decoded_op, self.rep = self.model_utils.ffn_autoencoder(self.input, self.params.output_shape)
+        self.decoded_op, self.rep = self.model_utils.ffn_autoencoder(self.normalized_input, self.params.output_shape)
 
     def encode(self):
-        self.rep = self.model_utils.ffn_encoder(self.input)
+        self.rep = self.model_utils.ffn_encoder(self.normalized_input)
 
     def compute_loss(self):
-        self.loss = tf.reduce_mean(tf.squared_difference(self.decoded_op, self.input))
+        self.loss = tf.losses.mean_squared_error(self.normalized_input, self.decoded_op)
 
     def generate_summary(self):
         if self.params.mode == 'TR':
-            train_loss = tf.summary.scalar('train_loss', self.loss)
-            train_image = tf.summary.image(name='train_input',
-                                           tensor= tf.reshape(self.input, shape=(-1, 28, 28, 1)),
-                                           max_outputs=self.params.max_output)
-            # tf.summary.image(name='train_encoded', tensor= tf.reshape(self.rep, shape=(-1, 28, 28, 1)), max_outputs=5)
-            train_decode = tf.summary.image(name='train_decoded',
-                                            tensor= tf.reshape(self.decoded_op, shape=(-1, 28, 28, 1)),
-                                            max_outputs=self.params.max_output)
+            loss_summary = 'train_loss'
+            img_summary = 'train_input'
+            dec_summary = 'train_decoded'
+            train_decode, train_image, train_loss = self.collect_summary(loss_summary, img_summary, dec_summary)
             self.merged_summary_train = tf.summary.merge([train_loss, train_image, train_decode])
+
         elif self.params.mode == 'VA':
-            valid_loss = tf.summary.scalar('valid_loss', self.loss)
-            valid_image = tf.summary.image(name='valid_input',
-                                           tensor=tf.reshape(self.input, shape=(-1, 28, 28, 1)),
-                                           max_outputs=self.params.max_output)
-            # tf.summary.image(name='valid_encoded', tensor=tf.reshape(self.rep, shape=(-1, 28, 28, 1)), max_outputs=5)
-            valid_decode = tf.summary.image(name='valid_decoded',
-                                            tensor=tf.reshape(self.decoded_op, shape=(-1, 28, 28, 1)),
-                                            max_outputs=self.params.max_output)
+            loss_summary = 'valid_loss'
+            img_summary = 'valid_input'
+            dec_summary = 'valid_decoded'
+            valid_decode, valid_image, valid_loss = self.collect_summary(loss_summary, img_summary, dec_summary)
             self.merged_summary_valid = tf.summary.merge([valid_loss, valid_image, valid_decode])
+
+        elif self.params.mode == 'TE':
+            loss_summary = 'test_loss'
+            img_summary = 'test_input'
+            dec_summary = 'test_decoded'
+            test_decode, test_image, _ = self.collect_summary(loss_summary, img_summary, dec_summary)
+            self.merged_summary_test = tf.summary.merge([test_image, test_decode])
+
+    def collect_summary(self, loss_summary, img_summary, dec_summary):
+        loss = tf.summary.scalar(loss_summary, self.loss)
+        image = tf.summary.image(name=img_summary,
+                                       tensor=tf.reshape(self.normalized_input, shape=(-1, 28, 28, 1)),
+                                       max_outputs=self.params.max_output)
+        decode = tf.summary.image(name=dec_summary,
+                                        tensor=tf.reshape(self.decoded_op, shape=(-1, 28, 28, 1)),
+                                        max_outputs=self.params.max_output)
+        return decode, image, loss
 
     def train(self):
         global optimizer
-        with tf.variable_scope('optimize_tar_net'):
+        with tf.variable_scope('optimize_loss'):
             learning_rate = self.params.learning_rate
             self.compute_loss()
             trainable_tvars = tf.trainable_variables()
