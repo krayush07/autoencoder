@@ -1,2 +1,0 @@
-model_checkpoint_path: "/home/aykumar/aykumar_home/aykumar_dir/autoencoder/global_module/utility_dir/mnist/models/cnn_autoencoder.ckpt"
-all_model_checkpoint_paths: "/home/aykumar/aykumar_home/aykumar_dir/autoencoder/global_module/utility_dir/mnist/models/cnn_autoencoder.ckpt"
