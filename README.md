@@ -93,13 +93,13 @@ t-SNE representation of latent features of images in test set
 
 <br/>
 
-Visualization of points corresponding to image '1' in t-SNE representation
+Visualization of points corresponding to latent feature of image '1' in test set in t-SNE representation
 ![alt text](global_module/utility_dir/mnist/viz/label1.png?raw=true "'Points representing images of 1 in test set.'")
 
 
 <br/>
 
-Visualization of points corresponding to image '5' in t-SNE representation
+Visualization of points corresponding to latent feature of image '5' in test set in t-SNE representation
 ![alt text](global_module/utility_dir/mnist/viz/label5.png?raw=true "'Points representing images of 5 in test set.'")
 
 
