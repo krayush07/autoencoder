@@ -25,11 +25,10 @@ class Directory():
         self.makedir(self.vocab_path)
         self.makedir(self.model_path)
         self.makedir(self.output_path)
+        self.makedir(self.log_path)
+        self.makedir(self.log_emb_path)
 
-        # self.glove_path = '/home/aykumar/aykumar_home/glove_dir' + '/glove_dict.pkl'
-        self.glove_path = '/home/aykumar/aykumar_home/glove_dir/glove.6B.100d.txt.pkl'
-
-        # self.glove_path = '/data/glove_dir/glove_300_pickle' + '/glove_dict.pkl'
+        self.glove_path = self.data_path + '/glove_dict.pkl'
 
         '''Directory to dataset'''
 
