@@ -89,17 +89,17 @@ Decoded and corresponding input image of test set:
 
 t-SNE representation of latent features of images in test set
 
-![alt text](global_module/utility_dir/mnist/viz/tSNE_test.png?raw=true "'t-SNE of latent features of images in test set. Each (label) digit is represented by a different color'")
+![alt text](global_module/utility_dir/mnist/viz/tSNE_test.png?raw=true "t-SNE of latent features of images in test set. Each (label) digit is represented by a different color")
 
 <br/>
 
 Visualization of points corresponding to latent feature of image '1' in test set in t-SNE representation
-![alt text](global_module/utility_dir/mnist/viz/label1.png?raw=true "'Points representing images of 1 in test set.'")
+![alt text](global_module/utility_dir/mnist/viz/label1.png?raw=true "Points representing latent feature of images of 1 in test set.")
 
 
 <br/>
 
 Visualization of points corresponding to latent feature of image '5' in test set in t-SNE representation
-![alt text](global_module/utility_dir/mnist/viz/label5.png?raw=true "'Points representing images of 5 in test set.'")
+![alt text](global_module/utility_dir/mnist/viz/label5.png?raw=true "Points representing latent feature of images of 5 in test set.")
 
 
